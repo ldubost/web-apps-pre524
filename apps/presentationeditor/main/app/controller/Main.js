@@ -673,6 +673,7 @@ define([
 
                 $(document).on('contextmenu', _.bind(me.onContextMenu, me));
 
+                /*
                 if (this._state.licenseWarning) {
                     value = Common.localStorage.getItem("de-license-warning");
                     value = (value!==null) ? parseInt(value) : 0;
@@ -697,6 +698,7 @@ define([
                         });
                     }
                 }
+                */
             },
 
             onOpenDocument: function(progress) {
@@ -708,6 +710,7 @@ define([
 
             onEditorPermissions: function(params) {
                 var licType = params.asc_getLicenseType();
+                /*
                 if (Asc.c_oLicenseResult.Expired === licType || Asc.c_oLicenseResult.Error === licType || Asc.c_oLicenseResult.ExpiredTrial === licType) {
                     Common.UI.warning({
                         title: this.titleLicenseExp,
@@ -717,6 +720,7 @@ define([
                     });
                     return;
                 }
+                */
 
                 if ( this.onServerVersion(params.asc_getBuildVersion()) ) return;
 
@@ -1240,6 +1244,7 @@ define([
             },
 
             onServerVersion: function(buildVersion) {
+                /*
                 if (this.changeServerVersion) return true;
 
                 if (DocsAPI.DocEditor.version() !== buildVersion && !window.compareVersions) {
@@ -1255,6 +1260,7 @@ define([
                     });
                     return true;
                 }
+                */
                 return false;
             },
 
