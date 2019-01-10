@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  Statusbar controller
  *
  *    Created by Maxim Kadushkin on 27 March 2014
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -105,6 +105,7 @@ define([
             /** coauthoring end **/
             this.api.asc_registerCallback('asc_onError', _.bind(this.onError, this));
             this.api.asc_registerCallback('asc_onFilterInfo',   _.bind(this.onApiFilterInfo , this));
+            this.api.asc_registerCallback('asc_onActiveSheetChanged', _.bind(this.onApiActiveSheetChanged, this));
 
             this.statusbar.setApi(api);
         },
@@ -241,15 +242,21 @@ define([
         },
 
         onTabMenu: function(obj, item, e) {
+            var me = this;
             switch (item.value){
             case 'ins':
-                this.api.asc_insertWorksheet(this.createSheetName());
+                setTimeout(function(){
+                    me.api.asc_insertWorksheet(me.createSheetName());
+                }, 1);
                 break;
             case 'del':     this.deleteWorksheet(); break;
             case 'ren':     this.renameWorksheet(); break;
             case 'copy':    this.moveWorksheet(false); break;
             case 'move':    this.moveWorksheet(true); break;
-            case 'hide':    this.hideWorksheet(true); break;
+            case 'hide':
+                setTimeout(function(){
+                    me.hideWorksheet(true);}, 1);
+                break;
             }
         },
 
@@ -620,10 +627,13 @@ define([
             }
         },
 
-
         onError: function(id, level, errData) {
             if (id == Asc.c_oAscError.ID.LockedWorksheetRename)
                 this.statusbar.update();
+        },
+
+        onApiActiveSheetChanged: function (index) {
+            this.statusbar.tabMenu.hide();
         },
 
         zoomText        : 'Zoom {0}%',

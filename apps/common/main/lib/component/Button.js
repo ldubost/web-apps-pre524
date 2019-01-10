@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  Button.js
  *
  *  Created by Alexander Yuzhin on 1/20/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -487,12 +487,12 @@ define([
                 this.caption = caption;
 
                 if (this.rendered) {
-                    var captionNode = this.cmpEl.find('button:first > .caption').andSelf().filter('button > .caption');
+                    var captionNode = this.cmpEl.find('button:first > .caption').addBack().filter('button > .caption');
 
                     if (captionNode.length > 0) {
                         captionNode.text(caption);
                     } else {
-                        this.cmpEl.find('button:first').andSelf().filter('button').text(caption);
+                        this.cmpEl.find('button:first').addBack().filter('button').text(caption);
                     }
                 }
             }

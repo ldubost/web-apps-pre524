@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  AdvancedSettingsWindow.js
  *
  *  Created by Julia Radzhabova on 2/21/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -71,7 +71,7 @@ define([
                 '</div>'
             ].join('');
 
-            _options.tpl = _.template(this.template, _options);
+            _options.tpl = _.template(this.template)(_options);
 
             this.handler = _options.handler;
             this.toggleGroup = _options.toggleGroup;
@@ -102,9 +102,10 @@ define([
                 btn.on('click', _.bind(me.onCategoryClick, me));
                 me.btnsCategory.push(btn);
             });
-            var cnt_panel = $window.find('.content-panel');
+            var cnt_panel = $window.find('.content-panel'),
+                menu_panel = $window.find('.menu-panel');
             cnt_panel.width(this.contentWidth);
-            $window.width($window.find('.menu-panel').width() + cnt_panel.outerWidth() + 2);
+            $window.width(((menu_panel.length>0) ? menu_panel.width() : 0) + cnt_panel.outerWidth() + 2);
 
             this.content_panels = $window.find('.settings-panel');
             if (this.btnsCategory.length>0)

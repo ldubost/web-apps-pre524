@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  Presentation Editor
  *
  *  Created by Alexander Yuzhin on 11/22/16
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -50,7 +50,10 @@ define([
 
     PE.Views.Settings = Backbone.View.extend(_.extend((function() {
         // private
-        var isEdit;
+        var isEdit,
+            canEdit = false,
+            canDownload = false,
+            canAbout = true;
 
         return {
             // el: '.view-main',
@@ -69,7 +72,7 @@ define([
             initEvents: function () {
                 var me = this;
 
-                $('#settings-presentation-info').single('click', _.bind(me.showInfo, me));
+                $('#settings-document-info').single('click', _.bind(me.showInfo, me));
                 $('#settings-download').single('click', _.bind(me.showDownload, me));
                 $('#settings-history').single('click', _.bind(me.showHistory, me));
                 $('#settings-help').single('click', _.bind(me.showHelp, me));
@@ -91,7 +94,13 @@ define([
             },
 
             setMode: function (mode) {
-                isEdit = (mode === 'edit')
+                isEdit = mode.isEdit;
+                canEdit = !mode.isEdit && mode.canEdit && mode.canRequestEditRights;
+                canDownload = mode.canDownload || mode.canDownloadOrigin;
+
+                if (mode.customization && mode.canBrandingExt) {
+                    canAbout = (mode.customization.about!==false);
+                }
             },
 
             rootLayout: function () {
@@ -100,7 +109,6 @@ define([
                         isPhone = Common.SharedSettings.get('phone');
 
                     if (isEdit) {
-                        $layour.find('#settings-edit-presentation').hide();
                         $layour.find('#settings-readermode').hide();
                         $layour.find('#settings-search .item-title').text(this.textFindAndReplace)
                     } else {
@@ -109,6 +117,8 @@ define([
                             .attr('checked', Common.SharedSettings.get('readerMode'))
                             .prop('checked', Common.SharedSettings.get('readerMode'));
                     }
+                    if (!canDownload) $layour.find('#settings-download').hide();
+                    if (!canAbout) $layour.find('#settings-about').hide();
 
                     return $layour.html();
                 }
@@ -178,7 +188,6 @@ define([
                     permissions = _.extend(permissions, data.doc.permissions);
 
                     if (permissions.edit === false) {
-                        $('#settings-edit-presentation').hide();
                     }
                 }
             },
@@ -205,7 +214,8 @@ define([
             textTel: 'tel',
             textSlideSize: 'Slide Size',
             mniSlideStandard: 'Standard (4:3)',
-            mniSlideWide: 'Widescreen (16:9)'
+            mniSlideWide: 'Widescreen (16:9)',
+            textPoweredBy: 'Powered by'
         }
     })(), PE.Views.Settings || {}))
 });

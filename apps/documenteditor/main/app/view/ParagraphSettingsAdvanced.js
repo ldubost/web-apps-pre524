@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  ParagraphSettingsAdvanced.js
  *
  *  Created by Julia Radzhabova on 2/21/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -52,7 +52,7 @@ define([    'text!documenteditor/main/app/template/ParagraphSettingsAdvanced.tem
 
     DE.Views.ParagraphSettingsAdvanced = Common.Views.AdvancedSettingsWindow.extend(_.extend({
         options: {
-            contentWidth: 325,
+            contentWidth: 335,
             height: 394,
             toggleGroup: 'paragraph-adv-settings-group',
             storageName: 'de-para-settings-adv-category'
@@ -1063,6 +1063,7 @@ define([    'text!documenteditor/main/app/template/ParagraphSettingsAdvanced.tem
             });
             if (rec) {
                 rec.set('tabAlign', align);
+                this._tabListChanged = true;
             } else {
                 rec = new Common.UI.DataViewModel();
                 rec.set({

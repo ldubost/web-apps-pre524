@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -35,7 +35,7 @@
  *  AddFunction.js
  *
  *  Created by Maxim Kadushkin on 12/14/2016
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -57,7 +57,7 @@ define([
                 };
 
                 _.extend(_params, args);
-                var $content = $('<div/>').append(_.template(this.template, _params));
+                var $content = $('<div/>').append(_.template(this.template)(_params));
 
                 // Android fix for navigation
                 if (Framework7.prototype.device.android) {
@@ -121,7 +121,7 @@ define([
                     'Logical':              me.sCatLogical
                 };
 
-                me.layout = $('<div/>').append(_.template(me.template, {
+                me.layout = $('<div/>').append(_.template(me.template)({
                     android     : Common.SharedSettings.get('android'),
                     phone       : Common.SharedSettings.get('phone'),
                     textGroups  : me.textGroups,

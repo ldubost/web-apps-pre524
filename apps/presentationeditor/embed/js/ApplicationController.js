@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -91,13 +91,15 @@ var ApplicationController = new(function(){
         if (docConfig) {
             permissions = $.extend(permissions, docConfig.permissions);
 
-            var docInfo = new Asc.asc_CDocInfo();
+            var _permissions = $.extend({}, docConfig.permissions),
+                docInfo = new Asc.asc_CDocInfo();
             docInfo.put_Id(docConfig.key);
             docInfo.put_Url(docConfig.url);
             docInfo.put_Title(docConfig.title);
             docInfo.put_Format(docConfig.fileType);
             docInfo.put_VKey(docConfig.vkey);
             docInfo.put_Token(docConfig.token);
+            docInfo.put_Permissions(_permissions);
 
             if (api) {
                 api.asc_registerCallback('asc_onGetEditorPermissions', onEditorPermissions);
@@ -211,6 +213,8 @@ var ApplicationController = new(function(){
     }
 
     function onDocumentContentReady() {
+        Common.Gateway.documentReady();
+
         api.ShowThumbnails(false);
         api.asc_DeleteVerticalScroll();
 
@@ -219,6 +223,9 @@ var ApplicationController = new(function(){
             onPlayStart();
         }
         hidePreloader();
+
+        var zf = (config.customization && config.customization.zoom ? parseInt(config.customization.zoom) : -1);
+        (zf == -1) ? api.zoomFitToPage() : ((zf == -2) ? api.zoomFitToWidth() : api.zoom(zf>0 ? zf : 100));
 
         if ( !embedConfig.shareUrl )
             $('#idt-share').hide();
@@ -391,7 +398,7 @@ var ApplicationController = new(function(){
     }
 
     function onEditorPermissions(params) {
-        if ( params.asc_getCanBranding() && (typeof config.customization == 'object') &&
+        if ( (params.asc_getLicenseType() === Asc.c_oLicenseResult.Success) && (typeof config.customization == 'object') &&
             config.customization && config.customization.logo ) {
 
             var logo = $('#header-logo');
@@ -407,7 +414,6 @@ var ApplicationController = new(function(){
         api.asc_setViewMode(true);
         api.asc_LoadDocument();
         api.Resize();
-        api.zoomFitToPage();
     }
 
     function onOpenDocument(progress) {
@@ -506,14 +512,14 @@ var ApplicationController = new(function(){
         Common.Analytics.trackEvent('Internal Error', id.toString());
     }
 
-    function onExternalError(error) {
+    function onExternalMessage(error) {
         if (error) {
             hidePreloader();
-            $('#id-error-mask-title').text(error.title);
+            $('#id-error-mask-title').text('Error');
             $('#id-error-mask-text').text(error.msg);
             $('#id-error-mask').css('display', 'block');
 
-            Common.Analytics.trackEvent('External Error', error.title);
+            Common.Analytics.trackEvent('External Error');
         }
     }
 
@@ -539,7 +545,6 @@ var ApplicationController = new(function(){
     function onDocumentResize() {
         if (api) {
             api.Resize();
-            api.zoomFitToPage();
         }
     }
 
@@ -573,8 +578,8 @@ var ApplicationController = new(function(){
             // Initialize api gateway
             Common.Gateway.on('init',               loadConfig);
             Common.Gateway.on('opendocument',       loadDocument);
-            Common.Gateway.on('showerror',          onExternalError);
-            Common.Gateway.ready();
+            Common.Gateway.on('showmessage',        onExternalMessage);
+            Common.Gateway.appReady();
         }
 
         return me;

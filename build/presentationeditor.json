@@ -30,7 +30,6 @@
                         "sockjs": "empty:",
                         "jszip": "empty:",
                         "jszip-utils": "empty:",
-                        "jsrsasign": "empty:",
                         "coapisettings": "empty:",
                         "allfonts": "empty:",
                         "sdk": "empty:",
@@ -85,8 +84,7 @@
                                 "xregexp",
                                 "sockjs",
                                 "jszip",
-                                "jszip-utils",
-                                "jsrsasign"
+                                "jszip-utils"
                             ]
                         },
                         "gateway": {
@@ -136,6 +134,9 @@
                     "dest": "../deploy/web-apps/apps/presentationeditor/main/resources/img/"
                 }
             ]
+        },
+        "jsonmin": {
+            "files": "../deploy/web-apps/apps/presentationeditor/main/**/*.json"
         },
         "copy": {
             "localization": [
@@ -197,7 +198,6 @@
                         "sockjs": "empty:",
                         "jszip": "empty:",
                         "jszip-utils": "empty:",
-                        "jsrsasign": "empty:",
                         "coapisettings": "empty:",
                         "allfonts": "empty:",
                         "sdk": "empty:",
@@ -255,8 +255,7 @@
                                 "xregexp",
                                 "sockjs",
                                 "jszip",
-                                "jszip-utils",
-                                "jsrsasign"
+                                "jszip-utils"
                             ]
                         },
                         "gateway": {
@@ -296,6 +295,9 @@
                     "dest": "../apps/presentationeditor/mobile/app/template/"
                 }
             ]
+        },
+        "jsonmin": {
+            "files": "../deploy/web-apps/apps/presentationeditor/mobile/**/*.json"
         },
         "copy": {
             "template-backup": [

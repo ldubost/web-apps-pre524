@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -35,7 +35,7 @@
  *  Settings.js
  *
  *  Created by Maxim Kadushkin on 12/05/2016
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -49,7 +49,10 @@ define([
 
     SSE.Views.Settings = Backbone.View.extend(_.extend((function() {
         // private
-        var isEdit;
+        var isEdit,
+            canEdit = false,
+            canDownload = false,
+            canAbout = true;
 
         return {
             // el: '.view-main',
@@ -96,7 +99,13 @@ define([
             },
 
             setMode: function (mode) {
-                isEdit = (mode === 'edit')
+                isEdit = mode.isEdit;
+                canEdit = !mode.isEdit && mode.canEdit && mode.canRequestEditRights;
+                canDownload = mode.canDownload || mode.canDownloadOrigin;
+
+                if (mode.customization && mode.canBrandingExt) {
+                    canAbout = (mode.customization.about!==false);
+                }
             },
 
             rootLayout: function () {
@@ -105,10 +114,11 @@ define([
                         isPhone = Common.SharedSettings.get('phone');
 
                     if (isEdit) {
-                        $layout.find('#settings-edit-document').hide();
                         $layout.find('#settings-search .item-title').text(this.textFindAndReplace)
                     } else {
                     }
+                    if (!canDownload) $layout.find('#settings-download').hide();
+                    if (!canAbout) $layout.find('#settings-about').hide();
 
                     return $layout.html();
                 }
@@ -135,7 +145,7 @@ define([
                         content: $content.html()
                     });
 
-                    this.fireEvent('page:show', this);
+                    this.fireEvent('page:show', [this, templateId]);
                 }
             },
 
@@ -173,7 +183,6 @@ define([
                     permissions = _.extend(permissions, data.doc.permissions);
 
                     if (permissions.edit === false) {
-                        $('#settings-edit-document').hide();
                     }
                 }
             },
@@ -197,7 +206,8 @@ define([
             textVersion: 'Version',
             textAddress: 'address',
             textEmail: 'email',
-            textTel: 'tel'
+            textTel: 'tel',
+            textPoweredBy: 'Powered by'
     }
     })(), SSE.Views.Settings || {}))
 });

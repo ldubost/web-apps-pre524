@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  DocumentHolder view
  *
  *  Created by Alexander Yuzhin on 1/11/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -81,7 +81,7 @@ define([
             me._currentParaObjDisabled = false;
 
             var showPopupMenu = function(menu, value, event, docElement, eOpts){
-                if (!_.isUndefined(menu)  && menu !== null && me.mode.isEdit){
+                if (!_.isUndefined(menu)  && menu !== null){
                     Common.UI.Menu.Manager.hideAll();
 
                     var showPoint = [event.get_X(), event.get_Y()],
@@ -135,6 +135,8 @@ define([
                         if (shapeprops) {
                             if (shapeprops.get_FromChart())
                                 menu_props.imgProps.isChart = true;
+                            else if (shapeprops.get_FromImage())
+                                menu_props.imgProps.isOnlyImg = true;
                             else
                                 menu_props.imgProps.isShape = true;
                         } else if ( chartprops )
@@ -186,9 +188,33 @@ define([
                 return (!noobject) ? {menu_to_show: menu_to_show, menu_props: menu_props} : null;
             };
 
+            var fillViewMenuProps = function(selectedElements) {
+                if (!selectedElements || !_.isArray(selectedElements)) return;
+                var menu_props = {},
+                    menu_to_show = me.viewModeMenu,
+                    noobject = true;
+                for (var i = 0; i <selectedElements.length; i++) {
+                    var elType = selectedElements[i].get_ObjectType();
+                    var elValue = selectedElements[i].get_ObjectValue();
+                    if (Asc.c_oAscTypeSelectElement.Image == elType) {
+                        //image
+                        menu_props.imgProps = {};
+                        menu_props.imgProps.value = elValue;
+                        noobject = false;
+                    } else if (Asc.c_oAscTypeSelectElement.Paragraph == elType)
+                    {
+                        menu_props.paraProps = {};
+                        menu_props.paraProps.value = elValue;
+                        menu_props.paraProps.locked = (elValue) ? elValue.get_Locked() : false;
+                        noobject = false;
+                    }
+                }
+                return (!noobject) ? {menu_to_show: menu_to_show, menu_props: menu_props} : null;
+            };
+
             var showObjectMenu = function(event, docElement, eOpts){
-                if (me.api && me.mode.isEdit){
-                    var obj = fillMenuProps(me.api.getSelectedElements());
+                if (me.api){
+                    var obj = (me.mode.isEdit) ? fillMenuProps(me.api.getSelectedElements()) : fillViewMenuProps(me.api.getSelectedElements());
                     if (obj) showPopupMenu(obj.menu_to_show, obj.menu_props, event, docElement, eOpts);
                 }
             };
@@ -204,8 +230,8 @@ define([
             };
 
             var onFocusObject = function(selectedElements) {
-                if (me.mode.isEdit && me.currentMenu && me.currentMenu.isVisible() && me.currentMenu !== me.hdrMenu){
-                    var obj = fillMenuProps(selectedElements);
+                if (me.currentMenu && me.currentMenu.isVisible() && me.currentMenu !== me.hdrMenu){
+                    var obj = (me.mode.isEdit) ? fillMenuProps(selectedElements) : fillViewMenuProps(selectedElements);
                     if (obj) {
                         if (obj.menu_to_show===me.currentMenu) {
                             me.currentMenu.options.initMenu(obj.menu_props);
@@ -285,7 +311,10 @@ define([
                     });
                     meEl.on('click', function(e){
                         if (e.target.localName == 'canvas') {
-                            meEl.focus();
+                            if (me._preventClick)
+                                me._preventClick = false;
+                            else
+                                meEl.focus();
                         }
                     });
                     meEl.on('mousedown', function(e){
@@ -574,6 +603,66 @@ define([
                 /** coauthoring end **/
             };
 
+            var onShowSpecialPasteOptions = function(specialPasteShowOptions) {
+                var coord  = specialPasteShowOptions.asc_getCellCoord(),
+                    pasteContainer = me.cmpEl.find('#special-paste-container'),
+                    pasteItems = specialPasteShowOptions.asc_getOptions();
+
+                // Prepare menu container
+                if (pasteContainer.length < 1) {
+                    me._arrSpecialPaste = [];
+                    me._arrSpecialPaste[Asc.c_oSpecialPasteProps.paste] = me.textPaste;
+                    me._arrSpecialPaste[Asc.c_oSpecialPasteProps.sourceformatting] = me.txtPasteSourceFormat;
+                    me._arrSpecialPaste[Asc.c_oSpecialPasteProps.keepTextOnly] = me.txtKeepTextOnly;
+
+                    pasteContainer = $('<div id="special-paste-container" style="position: absolute;"><div id="id-document-holder-btn-special-paste"></div></div>');
+                    me.cmpEl.append(pasteContainer);
+
+                    me.btnSpecialPaste = new Common.UI.Button({
+                        cls         : 'btn-toolbar',
+                        iconCls     : 'btn-paste',
+                        menu        : new Common.UI.Menu({items: []})
+                    });
+                    me.btnSpecialPaste.render($('#id-document-holder-btn-special-paste')) ;
+                }
+
+                if (pasteItems.length>0) {
+                    var menu = me.btnSpecialPaste.menu;
+                    for (var i = 0; i < menu.items.length; i++) {
+                        menu.removeItem(menu.items[i]);
+                        i--;
+                    }
+
+                    var group_prev = -1;
+                    _.each(pasteItems, function(menuItem, index) {
+                        var mnu = new Common.UI.MenuItem({
+                            caption: me._arrSpecialPaste[menuItem],
+                            value: menuItem,
+                            checkable: true,
+                            toggleGroup : 'specialPasteGroup'
+                        }).on('click', function(item, e) {
+                            me.api.asc_SpecialPaste(item.value);
+                            setTimeout(function(){menu.hide();}, 100);
+                        });
+                        menu.addItem(mnu);
+                    });
+                    (menu.items.length>0) && menu.items[0].setChecked(true, true);
+                }
+                if (coord.asc_getX()<0 || coord.asc_getY()<0) {
+                    if (pasteContainer.is(':visible')) pasteContainer.hide();
+                } else {
+                    var showPoint = [coord.asc_getX() + coord.asc_getWidth() + 3, coord.asc_getY() + coord.asc_getHeight() + 3];
+                    pasteContainer.css({left: showPoint[0], top : showPoint[1]});
+                    pasteContainer.show();
+                }
+            };
+
+            var onHideSpecialPasteOptions = function() {
+                var pasteContainer = me.cmpEl.find('#special-paste-container');
+                if (pasteContainer.is(':visible'))
+                    pasteContainer.hide();
+            };
+
             var onDialogAddHyperlink = function() {
                 var win, props, text;
                 if (me.api && me.mode.isEdit){
@@ -639,6 +728,46 @@ define([
 
             var onTextLanguage = function(langid) {
                 me._currLang.id = langid;
+            };
+
+            var onShowContentControlsActions = function(action, x, y) {
+                var menu = (action==1) ? me.contentsUpdateMenu : me.contentsMenu,
+                    menuContainer = me.cmpEl.find(Common.Utils.String.format('#menu-container-{0}', menu.id));
+
+                if (!menu) return;
+                me._fromShowContentControls = true;
+                Common.UI.Menu.Manager.hideAll();
+
+                if (!menu.rendered) {
+                    // Prepare menu container
+                    if (menuContainer.length < 1) {
+                        menuContainer = $(Common.Utils.String.format('<div id="menu-container-{0}" style="position: absolute; z-index: 10000;"><div class="dropdown-toggle" data-toggle="dropdown"></div></div>', menu.id));
+                        me.cmpEl.append(menuContainer);
+                    }
+
+                    menu.render(menuContainer);
+                    menu.cmpEl.attr({tabindex: "-1"});
+                    menu.on('hide:after', function(){
+                        if (!me._fromShowContentControls)
+                            me.api.asc_UncheckContentControlButtons();
+                    });
+                }
+
+                menuContainer.css({left: x, top : y});
+                menuContainer.attr('data-value', 'prevent-canvas-click');
+                me._preventClick = true;
+                menu.show();
+
+                menu.alignPosition();
+                _.delay(function() {
+                    menu.cmpEl.focus();
+                }, 10);
+                me._fromShowContentControls = false;
+            };
+
+            var onHideContentControlsActions = function() {
+                me.contentsMenu && me.contentsMenu.hide();
+                me.contentsUpdateMenu && me.contentsUpdateMenu.hide();
             };
 
             this.changeLanguageMenu = function(menu) {
@@ -1429,6 +1558,8 @@ define([
                         this.api.asc_registerCallback('asc_onDialogAddHyperlink',       onDialogAddHyperlink);
                         this.api.asc_registerCallback('asc_doubleClickOnChart',         onDoubleClickOnChart);
                         this.api.asc_registerCallback('asc_onSpellCheckVariantsFound',  _.bind(onSpellCheckVariantsFound, this));
+                        this.api.asc_registerCallback('asc_onShowContentControlsActions',_.bind(onShowContentControlsActions, this));
+                        this.api.asc_registerCallback('asc_onHideContentControlsActions',_.bind(onHideContentControlsActions, this));
                     }
                     this.api.asc_registerCallback('asc_onCoAuthoringDisconnect',        _.bind(onCoAuthoringDisconnect, this));
                     Common.NotificationCenter.on('api:disconnect',                      _.bind(onCoAuthoringDisconnect, this));
@@ -1438,6 +1569,9 @@ define([
                     this.api.asc_registerCallback('asc_onShowForeignCursorLabel',       _.bind(onShowForeignCursorLabel, this));
                     this.api.asc_registerCallback('asc_onHideForeignCursorLabel',       _.bind(onHideForeignCursorLabel, this));
                     this.api.asc_registerCallback('asc_onFocusObject',                  _.bind(onFocusObject, this));
+                    this.api.asc_registerCallback('asc_onShowSpecialPasteOptions',      _.bind(onShowSpecialPasteOptions, this));
+                    this.api.asc_registerCallback('asc_onHideSpecialPasteOptions',      _.bind(onHideSpecialPasteOptions, this));
+
                 }
 
                 return this;
@@ -1454,7 +1588,7 @@ define([
 
                 this.mode = m;
                 /** coauthoring begin **/
-                !(this.mode.canCoAuthoring && this.mode.isEdit && this.mode.canComments)
+                !(this.mode.canCoAuthoring && this.mode.canComments)
                     ? Common.util.Shortcuts.suspendEvents(hkComments)
                     : Common.util.Shortcuts.resumeEvents(hkComments);
                 /** coauthoring end **/
@@ -1501,10 +1635,6 @@ define([
 
         onApiParagraphStyleChange: function(name) {
             window.currentStyleName = name;
-            var menuStyleUpdate = this.menuStyleUpdate;
-            if (menuStyleUpdate != undefined) {
-                menuStyleUpdate.setCaption(this.updateStyleText.replace('%1', window.currentStyleName));
-            }
         },
 
         _applyTableWrap: function(wrap, align){
@@ -1639,7 +1769,7 @@ define([
 
         /** coauthoring begin **/
         addComment: function(item, e, eOpt){
-            if (this.api && this.mode.canCoAuthoring && this.mode.isEdit && this.mode.canComments) {
+            if (this.api && this.mode.canCoAuthoring && this.mode.canComments) {
                 this.suppressEditComplete = true;
 
                 var controller = DE.getController('Common.Controllers.Comments');
@@ -1705,6 +1835,94 @@ define([
                 } 
             }
             me.fireEvent('editcomplete', me);
+        },
+
+        onContentsMenuClick: function(type) {
+            if (this.api) {
+                var props = this.api.asc_GetTableOfContentsPr(true); // current TOC
+                if (type == 0 || type == 1) {
+                    if (!props) {
+                        props = new Asc.CTableOfContentsPr();
+                        props.put_OutlineRange(1, 9);
+                    }
+                    props.put_Hyperlink(true);
+                    props.put_ShowPageNumbers(type == 0);
+                    props.put_RightAlignTab(type == 0);
+                    props.put_TabLeader((type == 0) ? Asc.c_oAscTabLeader.Dot : Asc.c_oAscTabLeader.None);
+                    this.api.asc_SetTableOfContentsPr(props);
+                } else if (type == 'settings') {
+                    var me = this;
+                    var win = new DE.Views.TableOfContentsSettings({
+                        api: this.api,
+                        props: props,
+                        handler: function (result, value) {
+                            if (result == 'ok') {
+                                (props) ? me.api.asc_SetTableOfContentsPr(value) : me.api.asc_AddTableOfContents(null, value);
+                            }
+                            me.fireEvent('editcomplete', me);
+                        }
+                    });
+                    win.show();
+                } else if (type == 'remove') {
+                    this.api.asc_RemoveTableOfContents(props.get_InternalClass()); // remove current TOC
+                } else if (type == 'all' || type == 'pages') {
+                    this.api.asc_UpdateTableOfContents(type == 'pages', props.get_InternalClass()); // update current TOC
+                }
+                this.fireEvent('editcomplete', this);
+            }
+        },
+
+        createDelayedElementsViewer: function() {
+            var me = this;
+
+            var menuViewCopy = new Common.UI.MenuItem({
+                caption: me.textCopy,
+                value: 'copy'
+            }).on('click', _.bind(me.onCutCopyPaste, me));
+
+            var menuViewUndo = new Common.UI.MenuItem({
+                caption: me.textUndo
+            }).on('click', function () {
+                me.api.Undo();
+            });
+
+            var menuViewCopySeparator = new Common.UI.MenuItem({
+                caption: '--'
+            });
+
+            var menuViewAddComment = new Common.UI.MenuItem({
+                caption: me.addCommentText
+            }).on('click', _.bind(me.addComment, me));
+
+            this.viewModeMenu = new Common.UI.Menu({
+                initMenu: function (value) {
+                    var isInChart = (value.imgProps && value.imgProps.value && !_.isNull(value.imgProps.value.get_ChartProperties()));
+
+                    menuViewUndo.setVisible(me.mode.canCoAuthoring && me.mode.canComments);
+                    menuViewUndo.setDisabled(!me.api.asc_getCanUndo());
+                    menuViewCopySeparator.setVisible(!isInChart && me.api.can_AddQuotedComment() !== false && me.mode.canCoAuthoring && me.mode.canComments);
+                    menuViewAddComment.setVisible(!isInChart && me.api.can_AddQuotedComment() !== false && me.mode.canCoAuthoring && me.mode.canComments);
+                    menuViewAddComment.setDisabled(value.paraProps && value.paraProps.locked === true);
+
+                    var cancopy = me.api && me.api.can_CopyCut();
+                    menuViewCopy.setDisabled(!cancopy);
+                },
+                items: [
+                    menuViewCopy,
+                    menuViewUndo,
+                    menuViewCopySeparator,
+                    menuViewAddComment
+                ]
+            }).on('hide:after', function (menu, e, isFromInputControl) {
+                if (me.suppressEditComplete) {
+                    me.suppressEditComplete = false;
+                    return;
+                }
+
+                if (!isFromInputControl) me.fireEvent('editcomplete', me);
+                me.currentMenu = null;
+            });
+
         },
 
         createDelayedElements: function() {
@@ -2077,8 +2295,7 @@ define([
 
                     menuChartEdit.setVisible(!_.isNull(value.imgProps.value.get_ChartProperties()) && !onlyCommonProps);
 
-                    me.menuOriginalSize.setVisible(_.isNull(value.imgProps.value.get_ChartProperties()) && _.isNull(value.imgProps.value.get_ShapeProperties()) &&
-                                                  !onlyCommonProps);
+                    me.menuOriginalSize.setVisible(value.imgProps.isOnlyImg);
                     me.pictureMenu.items[7].setVisible(menuChartEdit.isVisible() || me.menuOriginalSize.isVisible());
 
                     var islocked = value.imgProps.locked || (value.headerProps!==undefined && value.headerProps.locked);
@@ -2209,21 +2426,21 @@ define([
                     menuAlign: 'tl-tr',
                     items   : [
                         me.menuTableCellTop = new Common.UI.MenuItem({
-                            caption     : me.topCellText,
+                            caption     : me.textShapeAlignTop,
                             toggleGroup : 'popuptablecellalign',
                             checkable   : true,
                             checked     : false,
                             valign      : Asc.c_oAscVertAlignJc.Top
                         }).on('click', _.bind(tableCellsVAlign, me)),
                         me.menuTableCellCenter = new Common.UI.MenuItem({
-                            caption     : me.centerCellText,
+                            caption     : me.textShapeAlignMiddle,
                             toggleGroup : 'popuptablecellalign',
                             checkable   : true,
                             checked     : false,
                             valign      : Asc.c_oAscVertAlignJc.Center
                         }).on('click', _.bind(tableCellsVAlign, me)),
                         me.menuTableCellBottom = new Common.UI.MenuItem({
-                            caption     : me.bottomCellText,
+                            caption     : me.textShapeAlignBottom,
                             toggleGroup : 'popuptablecellalign',
                             checkable   : true,
                             checked     : false,
@@ -2290,7 +2507,7 @@ define([
             var menuRemoveHyperlinkTable = new Common.UI.MenuItem({
                 caption     : me.removeHyperlinkText
             }).on('click', function(item, e){
-                me.api && me.api.remove_Hyperlink();
+                me.api && me.api.remove_Hyperlink(item.hyperProps.value);
                 me.fireEvent('editcomplete', me);
             });
 
@@ -2520,6 +2737,7 @@ define([
                     menuHyperlinkSeparator.setVisible(menuAddHyperlinkTable.isVisible() || menuHyperlinkTable.isVisible());
 
                     menuEditHyperlinkTable.hyperProps = value.hyperProps;
+                    menuRemoveHyperlinkTable.hyperProps = value.hyperProps;
 
                     if (text!==false) {
                         menuAddHyperlinkTable.hyperProps = {};
@@ -2725,21 +2943,21 @@ define([
                     menuAlign: 'tl-tr',
                     items   : [
                         me.menuParagraphTop = new Common.UI.MenuItem({
-                            caption     : me.topCellText,
+                            caption     : me.textShapeAlignTop,
                             checkable   : true,
                             checked     : false,
                             toggleGroup : 'popupparagraphvalign',
                             valign      : Asc.c_oAscVAlign.Top
                         }).on('click', _.bind(paragraphVAlign, me)),
                         me.menuParagraphCenter = new Common.UI.MenuItem({
-                            caption     : me.centerCellText,
+                            caption     : me.textShapeAlignMiddle,
                             checkable   : true,
                             checked     : false,
                             toggleGroup : 'popupparagraphvalign',
                             valign      : Asc.c_oAscVAlign.Center
                         }).on('click', _.bind(paragraphVAlign, me)),
                         me.menuParagraphBottom = new Common.UI.MenuItem({
-                            caption     : me.bottomCellText,
+                            caption     : me.textShapeAlignBottom,
                             checkable   : true,
                             checked     : false,
                             toggleGroup : 'popupparagraphvalign',
@@ -2824,7 +3042,7 @@ define([
             var menuRemoveHyperlinkPara = new Common.UI.MenuItem({
                 caption     : me.removeHyperlinkText
             }).on('click', function(item, e) {
-                me.api.remove_Hyperlink();
+                me.api.remove_Hyperlink(item.hyperProps.value);
                 me.fireEvent('editcomplete', me);
             });
 
@@ -2979,6 +3197,7 @@ define([
                     menuHyperlinkPara.setVisible(value.hyperProps!==undefined);
                     menuHyperlinkParaSeparator.setVisible(menuAddHyperlinkPara.isVisible() || menuHyperlinkPara.isVisible());
                     menuEditHyperlinkPara.hyperProps = value.hyperProps;
+                    menuRemoveHyperlinkPara.hyperProps = value.hyperProps;
                     if (text!==false) {
                         menuAddHyperlinkPara.hyperProps = {};
                         menuAddHyperlinkPara.hyperProps.value = new Asc.CHyperlinkProperty();
@@ -3034,6 +3253,9 @@ define([
 
                     menuStyleSeparator.setVisible(me.mode.canEditStyles && !isInChart);
                     menuStyle.setVisible(me.mode.canEditStyles && !isInChart);
+                    if (me.mode.canEditStyles && !isInChart) {
+                        me.menuStyleUpdate.setCaption(me.updateStyleText.replace('%1', DE.getController('Main').translationTable[window.currentStyleName] || window.currentStyleName));
+                    }
                 },
                 items: [
                     me.menuSpellPara,
@@ -3114,12 +3336,40 @@ define([
                 title       : me.textPrevPage + Common.Utils.String.platformKey('Alt+PgUp'),
                 placement   : 'top-right'
             });
+
+            var contentsTemplate = _.template('<a id="<%= id %>" tabindex="-1" type="menuitem" class="item-contents"><div style="background-position: 0 -<%= options.offsety %>px;" ></div></a>');
+            this.contentsMenu = new Common.UI.Menu({
+                items: [
+                    {template: contentsTemplate, offsety: 0, value: 0},
+                    {template: contentsTemplate, offsety: 72, value: 1},
+                    {caption: this.textContentsSettings, value: 'settings'},
+                    {caption: this.textContentsRemove, value: 'remove'}
+                ]
+            }).on('item:click', function (menu, item, e) {
+                setTimeout(function(){
+                    me.onContentsMenuClick(item.value);
+                }, 10);
+            });
+
+            this.contentsUpdateMenu = new Common.UI.Menu({
+                items: [
+                    {caption: this.textUpdateAll, value: 'all'},
+                    {caption: this.textUpdatePages, value: 'pages'}
+                ]
+            }).on('item:click', function (menu, item, e) {
+                setTimeout(function(){
+                    me.onContentsMenuClick(item.value);
+                }, 10);
+            });
+
         },
 
         setLanguages: function(langs){
             var me = this;
 
-            if (langs && langs.length > 0) {
+            if (langs && langs.length > 0 && me.langParaMenu && me.langTableMenu) {
+                me.langParaMenu.menu.removeAll();
+                me.langTableMenu.menu.removeAll();
                 _.each(langs, function(lang, index){
                     me.langParaMenu.menu.addItem(new Common.UI.MenuItem({
                         caption     : lang.title,
@@ -3217,9 +3467,6 @@ define([
         /** coauthoring begin **/
         addCommentText          : 'Add Comment',
         /** coauthoring end **/
-        topCellText:            'Align Top',
-        centerCellText:         'Align Center',
-        bottomCellText:         'Align Bottom',
         cellAlignText:          'Cell Vertical Alignment',
         txtInline: 'Inline',
         txtSquare: 'Square',
@@ -3265,8 +3512,8 @@ define([
         textCut: 'Cut',
         directionText: 'Text Direction',
         directHText: 'Horizontal',
-        direct90Text: 'Rotate at 90°',
-        direct270Text: 'Rotate at 270°',
+        direct90Text: 'Rotate Text Down',
+        direct270Text: 'Rotate Text Up°',
         txtRemoveAccentChar: 'Remove accent character',
         txtBorderProps: 'Borders property',
         txtHideTop: 'Hide top border',
@@ -3336,7 +3583,14 @@ define([
         txtAlignToChar: 'Align to character',
         txtDeleteRadical: 'Delete radical',
         txtDeleteChars: 'Delete enclosing characters',
-        txtDeleteCharsAndSeparators: 'Delete enclosing characters and separators'
+        txtDeleteCharsAndSeparators: 'Delete enclosing characters and separators',
+        txtKeepTextOnly: 'Keep text only',
+        textUndo: 'Undo',
+        textContentsSettings: 'Settings',
+        textContentsRemove: 'Remove table of contents',
+        textUpdateAll: 'Update entire table',
+        textUpdatePages: 'Update page numbers only',
+        txtPasteSourceFormat: 'Keep source formatting'
 
     }, DE.Views.DocumentHolder || {}));
 });

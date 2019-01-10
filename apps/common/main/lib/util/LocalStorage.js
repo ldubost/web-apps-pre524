@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *    LocalStorage.js
  *
  *    Created by Maxim Kadushkin on 31 July 2015
- *    Copyright (c) 2015 Ascensio System SIA. All rights reserved.
+ *    Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -63,7 +63,12 @@ define(['gateway'], function () {
 
         var _setItem = function(name, value, just) {
             if (_lsAllowed) {
-                localStorage.setItem(name, value);
+                try
+                {
+                    localStorage.setItem(name, value);
+                }
+                catch (error){}
+
             } else {
                 _store[name] = value;
 

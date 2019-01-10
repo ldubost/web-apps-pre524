@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -35,7 +35,7 @@
  *  TableSettings.js
  *
  *  Created by Julia Radzhabova on 3/28/16
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -478,10 +478,25 @@ define([
                 var handlerDlg = function(dlg, result) {
                     if (result == 'ok') {
                         me.api.asc_setSelectionDialogMode(Asc.c_oAscSelectionDialogType.None);
-                        me.api.asc_changeTableRange(me._state.TableName, dlg.getSettings());
+
+                        var settings = dlg.getSettings();
+                        if (settings.selectionType == Asc.c_oAscSelectionType.RangeMax || settings.selectionType == Asc.c_oAscSelectionType.RangeRow ||
+                            settings.selectionType == Asc.c_oAscSelectionType.RangeCol)
+                            Common.UI.warning({
+                                title: me.textLongOperation,
+                                msg: me.warnLongOperation,
+                                buttons: ['ok', 'cancel'],
+                                callback: function(btn) {
+                                    if (btn == 'ok')
+                                        setTimeout(function() { me.api.asc_changeTableRange(me._state.TableName, settings.range)}, 1);
+                                    Common.NotificationCenter.trigger('edit:complete', me);
+                                }
+                            });
+                        else
+                            me.api.asc_changeTableRange(me._state.TableName, settings.range);
                     }
 
-                    Common.NotificationCenter.trigger('edit:complete', me.toolbar);
+                    Common.NotificationCenter.trigger('edit:complete', me);
                 };
                 var win = new SSE.Views.TableOptionsDialog({
                     handler: handlerDlg
@@ -545,7 +560,9 @@ define([
         notcriticalErrorTitle   : 'Warning',
         textReservedName        : 'The name you are trying to use is already referenced in cell formulas. Please use some other name.',
         textAdvanced:   'Show advanced settings',
-        textConvertRange: 'Convert to range'
+        textConvertRange: 'Convert to range',
+        textLongOperation: 'Long operation',
+        warnLongOperation: 'The operation you are about to perform might take rather much time to complete.<br>Are you sure you want to continue?'
 
     }, SSE.Views.TableSettings || {}));
 });

@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -35,7 +35,7 @@
  *  AddOther.js
  *
  *  Created by Kadushkin Maxim on 12/07/2016
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -76,8 +76,7 @@ define([
                 }
 
                 mapNavigation =
-                    el = _.template(tplNavigation,
-                        {
+                    el = _.template(tplNavigation)({
                             android     : Common.SharedSettings.get('android'),
                             phone       : Common.SharedSettings.get('phone'),
                             textBack    : this.textBack,

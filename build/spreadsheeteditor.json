@@ -30,7 +30,6 @@
                         "sockjs": "empty:",
                         "jszip": "empty:",
                         "jszip-utils": "empty:",
-                        "jsrsasign": "empty:",
                         "coapisettings": "empty:",
                         "allfonts": "empty:",
                         "sdk": "empty:",
@@ -85,8 +84,7 @@
                                 "xregexp",
                                 "sockjs",
                                 "jszip",
-                                "jszip-utils",
-                                "jsrsasign"
+                                "jszip-utils"
                             ]
                         },
                         "gateway": {
@@ -144,6 +142,9 @@
                     "dest": "../deploy/web-apps/apps/spreadsheeteditor/main/resources/img/"
                 }
             ]
+        },
+        "jsonmin": {
+            "files": "../deploy/web-apps/apps/spreadsheeteditor/main/**/*.json"
         },
         "copy": {
             "localization": [
@@ -208,7 +209,6 @@
                         "sockjs": "empty:",
                         "jszip": "empty:",
                         "jszip-utils": "empty:",
-                        "jsrsasign": "empty:",
                         "coapisettings": "empty:",
                         "allfonts": "empty:",
                         "sdk": "empty:",
@@ -266,8 +266,7 @@
                                 "xregexp",
                                 "sockjs",
                                 "jszip",
-                                "jszip-utils",
-                                "jsrsasign"
+                                "jszip-utils"
                             ]
                         },
                         "gateway": {
@@ -307,6 +306,9 @@
                     "dest": "../apps/spreadsheeteditor/mobile/app/template/"
                 }
             ]
+        },
+        "jsonmin": {
+            "files": "../deploy/web-apps/apps/spreadsheeteditor/mobile/**/*.json"
         },
         "copy": {
             "template-backup": [

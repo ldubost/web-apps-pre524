@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  Document Editor
  *
  *  Created by Alexander Yuzhin on 9/22/16
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -80,7 +80,7 @@ define([
                     usersCount          : 1,
                     fastCoauth          : true,
                     lostEditingRights   : false,
-                    licenseWarning      : false
+                    licenseType         : false
                 };
 
                 // Initialize viewport
@@ -98,7 +98,28 @@ define([
 
                 me.api = new Asc.asc_docs_api({
                     'id-view'  : 'editor_sdk',
-                    'mobile'   : true
+                    'mobile'   : true,
+                    'translate': {
+                        'Series': me.txtSeries,
+                        'Diagram Title': me.txtDiagramTitle,
+                        'X Axis': me.txtXAxis,
+                        'Y Axis': me.txtYAxis,
+                        'Your text here': me.txtArt,
+                        'Slide text': this.txtSlideText,
+                        'Chart': this.txtSldLtTChart,
+                        'ClipArt': this.txtClipArt,
+                        'Diagram': this.txtDiagram,
+                        'Date and time': this.txtDateTime,
+                        'Footer': this.txtFooter,
+                        'Header': this.txtHeader,
+                        'Media': this.txtMedia,
+                        'Picture': this.txtPicture,
+                        'Image': this.txtImage,
+                        'Slide number': this.txtSlideNumber,
+                        'Slide subtitle': this.txtSlideSubtitle,
+                        'Table': this.txtSldLtTTbl,
+                        'Slide title': this.txtSlideTitle
+                    }
                 });
 
                 // Localization uiApp params
@@ -147,7 +168,19 @@ define([
                     Common.Gateway.on('init',           _.bind(me.loadConfig, me));
                     Common.Gateway.on('showmessage',    _.bind(me.onExternalMessage, me));
                     Common.Gateway.on('opendocument',   _.bind(me.loadDocument, me));
-                    Common.Gateway.ready();
+                    Common.Gateway.appReady();
+
+                    Common.Gateway.on('internalcommand', function(data) {
+                        if (data.command=='hardBack') {
+                            if ($('.modal-in').length>0) {
+                                if ( !$(me.loadMask).hasClass('modal-in') )
+                                    uiApp.closeModal();
+                                Common.Gateway.internalMessage('hardBack', false);
+                            } else
+                                Common.Gateway.internalMessage('hardBack', true);
+                        }
+                    });
+                    Common.Gateway.internalMessage('listenHardBack');
                 }
 
                 me.initNames();
@@ -196,7 +229,8 @@ define([
                 if (data.doc) {
                     this.permissions = $.extend(this.permissions, data.doc.permissions);
 
-                    var _user = new Asc.asc_CUserInfo();
+                    var _permissions = $.extend({}, data.doc.permissions),
+                        _user = new Asc.asc_CUserInfo();
                     _user.put_Id(this.appOptions.user.id);
                     _user.put_FullName(this.appOptions.user.fullname);
 
@@ -210,9 +244,11 @@ define([
                     docInfo.put_UserInfo(_user);
                     docInfo.put_CallbackUrl(this.editorConfig.callbackUrl);
                     docInfo.put_Token(data.doc.token);
+                    docInfo.put_Permissions(_permissions);
                 }
 
                 this.api.asc_registerCallback('asc_onGetEditorPermissions', _.bind(this.onEditorPermissions, this));
+                this.api.asc_registerCallback('asc_onLicenseChanged',       _.bind(this.onLicenseChanged, this));
                 this.api.asc_setDocInfo(docInfo);
                 this.api.asc_getEditorPermissions(this.editorConfig.licenseUrl, this.editorConfig.customerId);
 
@@ -226,11 +262,11 @@ define([
             setMode: function(mode){
                 var me = this;
 
-                Common.SharedSettings.set('mode', mode);
+                Common.SharedSettings.set('mode', mode.isEdit ? 'edit' : 'view');
 
                 if (me.api) {
-                    me.api.asc_enableKeyEvents(mode == 'edit');
-                    me.api.asc_setViewMode(mode != 'edit');
+                    me.api.asc_enableKeyEvents(mode.isEdit);
+                    me.api.asc_setViewMode(!mode.isEdit);
                 }
             },
 
@@ -401,6 +437,12 @@ define([
                         title   = me.loadingDocumentTitleText;
                         text    = me.loadingDocumentTextText;
                         break;
+                    default:
+                        if (typeof action.id == 'string'){
+                            title   = action.id;
+                            text    = action.id;
+                        }
+                        break;
                 }
 
                 if (action.type == Asc.c_oAscAsyncActionType['BlockInteraction']) {
@@ -422,6 +464,11 @@ define([
                 if (this._isDocReady)
                     return;
 
+                Common.Gateway.documentReady();
+
+                if (this._state.openDlg)
+                    uiApp.closeModal(this._state.openDlg);
+
                 var me = this,
                     value;
 
@@ -435,7 +482,7 @@ define([
                 var zf = (value!==null) ? parseInt(value) : (me.appOptions.customization && me.appOptions.customization.zoom ? parseInt(me.appOptions.customization.zoom) : -1);
                 (zf == -1) ? me.api.zoomFitToPage() : ((zf == -2) ? me.api.zoomFitToWidth() : me.api.zoom(zf>0 ? zf : 100));
 
-                Common.localStorage.setItem("pe-settings-showsnaplines", me.api.get_ShowSnapLines() ? 1 : 0);
+                me.api.asc_setSpellCheck(false); // don't use spellcheck for mobile mode
 
                 me.api.asc_registerCallback('asc_onStartAction',            _.bind(me.onLongActionBegin, me));
                 me.api.asc_registerCallback('asc_onEndAction',              _.bind(me.onLongActionEnd, me));
@@ -456,8 +503,6 @@ define([
                 }
                 me.api.asc_SetFastCollaborative(me._state.fastCoauth);
                 /** coauthoring end **/
-
-                Common.localStorage.setItem("pe-settings-showsnaplines", me.api.get_ShowSnapLines() ? 1 : 0);
 
                 if (me.appOptions.isEdit) {
                     value = me._state.fastCoauth; // Common.localStorage.getItem("de-settings-autosave");
@@ -486,34 +531,60 @@ define([
                     me.api.zoomFitToPage();
                 }
 
-                if (me._state.licenseWarning) {
-                    value = Common.localStorage.getItem("de-license-warning");
+                me.applyLicense();
+            },
+
+            onLicenseChanged: function(params) {
+                var licType = params.asc_getLicenseType();
+                if (licType !== undefined && this.appOptions.canEdit && this.editorConfig.mode !== 'view' &&
+                    (licType===Asc.c_oLicenseResult.Connections || licType===Asc.c_oLicenseResult.UsersCount || licType===Asc.c_oLicenseResult.ConnectionsOS || licType===Asc.c_oLicenseResult.UsersCountOS))
+                    this._state.licenseType = licType;
+
+                if (this._isDocReady && this._state.licenseType)
+                    this.applyLicense();
+            },
+
+            applyLicense: function() {
+                var me = this;
+                if (this._state.licenseType) {
+                    var license = this._state.licenseType,
+                        buttons = [{text: 'OK'}];
+                    if (license===Asc.c_oLicenseResult.Connections || license===Asc.c_oLicenseResult.UsersCount) {
+                        license = (license===Asc.c_oLicenseResult.Connections) ? this.warnLicenseExceeded : this.warnLicenseUsersExceeded;
+                    } else {
+                        license = (license===Asc.c_oLicenseResult.ConnectionsOS) ? this.warnNoLicense : this.warnNoLicenseUsers;
+                        buttons = [{
+                                        text: me.textBuyNow,
+                                        bold: true,
+                                        onClick: function() {
+                                            window.open('https://www.onlyoffice.com', "_blank");
+                                        }
+                                    },
+                                    {
+                                        text: me.textContactUs,
+                                        onClick: function() {
+                                            window.open('mailto:sales@onlyoffice.com', "_blank");
+                                        }
+                                    }];
+                    }
+                    PE.getController('Toolbar').activateViewControls();
+                    PE.getController('Toolbar').deactivateEditControls();
+                    Common.NotificationCenter.trigger('api:disconnect');
+
+                    var value = Common.localStorage.getItem("pe-license-warning");
                     value = (value!==null) ? parseInt(value) : 0;
                     var now = (new Date).getTime();
 
                     if (now - value > 86400000) {
-                        Common.localStorage.setItem("de-license-warning", now);
+                        Common.localStorage.setItem("pe-license-warning", now);
                         uiApp.modal({
                             title: me.textNoLicenseTitle,
-                            text : me.warnNoLicense,
-                            buttons: [
-                                {
-                                    text: me.textBuyNow,
-                                    bold: true,
-                                    onClick: function() {
-                                        window.open('http://www.onlyoffice.com/enterprise-edition.aspx', "_blank");
-                                    }
-                                },
-                                {
-                                    text: me.textContactUs,
-                                    onClick: function() {
-                                        window.open('mailto:sales@onlyoffice.com', "_blank");
-                                    }
-                                }
-                            ],
+                            text : license,
+                            buttons: buttons
                         });
                     }
-                }
+                } else
+                    PE.getController('Toolbar').activateControls();
             },
 
             onOpenDocument: function(progress) {
@@ -570,9 +641,8 @@ define([
                 me.appOptions.canDownloadOrigin = !me.appOptions.nativeApp && me.permissions.download !== false && (type && typeof type[1] === 'string');
                 me.appOptions.canDownload       = !me.appOptions.nativeApp && me.permissions.download !== false && (!type || typeof type[1] !== 'string');
 
-                me._state.licenseWarning = (licType===Asc.c_oLicenseResult.Connections) && me.appOptions.canEdit && me.editorConfig.mode !== 'view';
-
                 me.appOptions.canBranding  = (licType === Asc.c_oLicenseResult.Success) && (typeof me.editorConfig.customization == 'object');
+                me.appOptions.canBrandingExt = params.asc_getCanBranding() && (typeof me.editorConfig.customization == 'object');
 
                 me.applyModeCommonElements();
                 me.applyModeEditorElements();
@@ -594,24 +664,13 @@ define([
 
                 _.each(me.getApplication().controllers, function(controller) {
                     if (controller && _.isFunction(controller.setMode)) {
-                        controller.setMode(me.editorConfig.mode);
+                        controller.setMode(me.appOptions);
                     }
                 });
 
                 if (me.api) {
                     me.api.asc_registerCallback('asc_onSendThemeColors', _.bind(me.onSendThemeColors, me));
                     me.api.asc_registerCallback('asc_onDownloadUrl',     _.bind(me.onDownloadUrl, me));
-
-                    var translateChart = new Asc.asc_CChartTranslate();
-                    translateChart.asc_setTitle(me.txtDiagramTitle);
-                    translateChart.asc_setXAxis(me.txtXAxis);
-                    translateChart.asc_setYAxis(me.txtYAxis);
-                    translateChart.asc_setSeries(me.txtSeries);
-                    me.api.asc_setChartTranslate(translateChart);
-
-                    var translateArt = new Asc.asc_TextArtTranslate();
-                    translateArt.asc_setDefaultText(me.txtArt);
-                    me.api.asc_setTextArtTranslate(translateArt);
                 }
             },
 
@@ -659,7 +718,7 @@ define([
                         message: [msg.msg.charAt(0).toUpperCase() + msg.msg.substring(1)]
                     });
 
-                    Common.component.Analytics.trackEvent('External Error', msg.title);
+                    Common.component.Analytics.trackEvent('External Error');
                 }
             },
 
@@ -766,6 +825,10 @@ define([
                         config.msg = this.errorBadImageUrl;
                         break;
 
+                    case Asc.c_oAscError.ID.DataEncrypted:
+                        config.msg = this.errorDataEncrypted;
+                        break;
+
                     default:
                         config.msg = this.errorDefaultMessage.replace('%1', id);
                         break;
@@ -785,6 +848,10 @@ define([
                         config.callback = function() {
                             Common.NotificationCenter.trigger('goback');
                         }
+                    }
+                    if (id == Asc.c_oAscError.ID.DataEncrypted) {
+                        this.api.asc_coAuthoringDisconnect();
+                        Common.NotificationCenter.trigger('api:disconnect');
                     }
                 } else {
                     config.title    = this.notcriticalErrorTitle;
@@ -983,28 +1050,40 @@ define([
             },
 
             onAdvancedOptions: function(advOptions) {
+                if (this._state.openDlg) return;
+
                 var type = advOptions.asc_getOptionId(),
-                    me = this, modal;
+                    me = this;
 
                 if (type == Asc.c_oAscAdvancedOptionsID.DRM) {
-                    modal = uiApp.modal({
+                    $(me.loadMask).hasClass('modal-in') && uiApp.closeModal(me.loadMask);
+
+                    me.onLongActionEnd(Asc.c_oAscAsyncActionType.BlockInteraction, LoadingDocument);
+
+                    me._state.openDlg = uiApp.modal({
                         title: me.advDRMOptions,
-                        text: me.advDRMEnterPassword,
+                        text: me.txtProtected,
                         afterText: '<div class="input-field"><input type="password" name="modal-password" placeholder="' + me.advDRMPassword + '" class="modal-text-input"></div>',
                         buttons: [
                             {
                                 text: 'OK',
                                 bold: true,
                                 onClick: function () {
-                                    var password = $(modal).find('.modal-text-input[name="modal-password"]').val();
+                                    var password = $(me._state.openDlg).find('.modal-text-input[name="modal-password"]').val();
                                     me.api.asc_setAdvancedOptions(type, new Asc.asc_CDRMAdvancedOptions(password));
 
                                     if (!me._isDocReady) {
                                         me.onLongActionBegin(Asc.c_oAscAsyncActionType['BlockInteraction'], LoadingDocument);
                                     }
+                                    me._state.openDlg = null;
                                 }
                             }
                         ]
+                    });
+
+                    // Vertical align
+                    $$(me._state.openDlg).css({
+                        marginTop: - Math.round($$(me._state.openDlg).outerHeight() / 2) + 'px'
                     });
                 }
             },
@@ -1198,7 +1277,6 @@ define([
             textTryUndoRedo: 'The Undo/Redo functions are disabled for the Fast co-editing mode.',
             textBuyNow: 'Visit website',
             textNoLicenseTitle: 'ONLYOFFICE open source version',
-            warnNoLicense: 'You are using an open source version of ONLYOFFICE. The version has limitations for concurrent connections to the document server (20 connections at a time).<br>If you need more please consider purchasing a commercial license.',
             textContactUs: 'Contact sales',
             errorViewerDisconnect: 'Connection is lost. You can still view the document,<br>but will not be able to download or print until the connection is restored.',
             warnLicenseExp: 'Your license has expired.<br>Please update your license and refresh the page.',
@@ -1218,7 +1296,25 @@ define([
             textDone: 'Done',
             titleServerVersion: 'Editor updated',
             errorServerVersion: 'The editor version has been updated. The page will be reloaded to apply the changes.',
-            errorBadImageUrl: 'Image url is incorrect'
+            errorBadImageUrl: 'Image url is incorrect',
+            txtSlideText: 'Slide text',
+            txtClipArt: 'Clip Art',
+            txtDiagram: 'SmartArt',
+            txtDateTime: 'Date and time',
+            txtFooter: 'Footer',
+            txtHeader: 'Header',
+            txtMedia: 'Media',
+            txtPicture: 'Picture',
+            txtImage: 'Image',
+            txtSlideNumber: 'Slide number',
+            txtSlideSubtitle: 'Slide subtitle',
+            txtSlideTitle: 'Slide title',
+            txtProtected: 'Once you enter the password and open the file, the current password to the file will be reset',
+            warnNoLicense: 'This version of ONLYOFFICE Editors has certain limitations for concurrent connections to the document server.<br>If you need more please consider purchasing a commercial license.',
+            warnNoLicenseUsers: 'This version of ONLYOFFICE Editors has certain limitations for concurrent users.<br>If you need more please consider purchasing a commercial license.',
+            warnLicenseExceeded: 'The number of concurrent connections to the document server has been exceeded and the document will be opened for viewing only.<br>Please contact your administrator for more information.',
+            warnLicenseUsersExceeded: 'The number of concurrent users has been exceeded and the document will be opened for viewing only.<br>Please contact your administrator for more information.',
+            errorDataEncrypted: 'Encrypted changes have been received, they cannot be deciphered.'
         }
     })(), PE.Controllers.Main || {}))
 });

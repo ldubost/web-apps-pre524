@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  Add formula to cell dialog
  *
  *  Created by Alexey.Musinov on 11/04/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -92,7 +92,7 @@ define([
             this.formulasGroups =   options.formulasGroups;
             this.handler        =   options.handler;
 
-            _options.tpl        =   _.template(this.template, _options);
+            _options.tpl        =   _.template(this.template)(_options);
 
             Common.UI.Window.prototype.initialize.call(this, _options);
         },
@@ -115,7 +115,10 @@ define([
                 this.translationTable[name] = {
                     en: this[translate],
                     de: this[translate+'_de'],
-                    ru: this[translate+'_ru']
+                    ru: this[translate+'_ru'],
+                    pl: this[translate+'_pl'],
+                    es: this[translate+'_es'],
+                    fr: this[translate+'_fr']
                 };
             }
 
@@ -134,7 +137,7 @@ define([
                     main_height = Common.Utils.innerHeight();
                 }
 
-                top = ((parseInt(main_height, 10) - parseInt(win_height, 10)) / 2) * 0.9;
+                top = (parseInt(main_height, 10) - parseInt(win_height, 10)) / 2;
                 left = (parseInt(main_width, 10) - parseInt(this.initConfig.width, 10)) / 2;
 
                 this.$window.css('left', Math.floor(left));
@@ -237,7 +240,7 @@ define([
                     if (this.formulasGroups.at(i).get('functions').length) {
                         groupsListItems.push({
                             value           : this.formulasGroups.at(i).get('index'),
-                            displayValue    : this.translationTable[this.formulasGroups.at(i).get('name')][lang]
+                            displayValue    : this.translationTable[this.formulasGroups.at(i).get('name')][lang] || this.translationTable[this.formulasGroups.at(i).get('name')]['en']
                         });
                     }
                 }
@@ -406,7 +409,7 @@ define([
         sCategoryEngineering:           'Engineering',
         sCategoryFinancial:             'Financial',
         sCategoryInformation:           'Information',
-        sCategoryLookupAndReference:    'LookupAndReference',
+        sCategoryLookupAndReference:    'Lookup and reference',
         sCategoryMathematic:            'Math and trigonometry',
         sCategoryStatistical:           'Statistical',
         sCategoryTextAndData:           'Text and data',
@@ -437,6 +440,42 @@ define([
         sCategoryMathematic_ru:         'Математические',
         sCategoryStatistical_ru:        'Статистические',
         sCategoryTextAndData_ru:        'Текст и данные',
-        txtTitle:                       'Insert Function'
+        txtTitle:                       'Insert Function',
+        sCategoryAll_es:                   'Todo',
+        sCategoryLogical_es:               'Lógico',
+        sCategoryCube_es:                  'Cubo',
+        sCategoryDatabase_es:              'Base de Datos',
+        sCategoryDateAndTime_es:           'Fecha y hora',
+        sCategoryEngineering_es:           'Ingenería',
+        sCategoryFinancial_es:             'Financial',
+        sCategoryInformation_es:           'Información',
+        sCategoryLookupAndReference_es:    'Búsqueda y referencia',
+        sCategoryMathematic_es:            'Matemáticas y trigonometría',
+        sCategoryStatistical_es:           'Estadístico',
+        sCategoryTextAndData_es:           'Texto y datos',
+        sCategoryAll_fr:                   'Tout',
+        sCategoryLogical_fr:               'Logique',
+        sCategoryCube_fr:                  'Cube',
+        sCategoryDatabase_fr:              'Base de données',
+        sCategoryDateAndTime_fr:           'Date et heure',
+        sCategoryEngineering_fr:           'Ingénierie',
+        sCategoryFinancial_fr:             'Financier',
+        sCategoryInformation_fr:           'Information',
+        sCategoryLookupAndReference_fr:    'Recherche et référence',
+        sCategoryMathematic_fr:            'Maths et trigonométrie',
+        sCategoryStatistical_fr:           'Statistiques',
+        sCategoryTextAndData_fr:           'Texte et données',
+        sCategoryAll_pl:                   'Wszystko',
+        sCategoryLogical_pl:               'Logiczny',
+        sCategoryCube_pl:                  'Sześcian',
+        sCategoryDatabase_pl:              'Baza danych',
+        sCategoryDateAndTime_pl:           'Data i czas',
+        sCategoryEngineering_pl:           'Inżyniera',
+        sCategoryFinancial_pl:             'Finansowe',
+        sCategoryInformation_pl:           'Informacja',
+        sCategoryLookupAndReference_pl:    'Wyszukiwanie i odniesienie',
+        sCategoryMathematic_pl:            'Matematyczne i trygonometryczne',
+        sCategoryStatistical_pl:           'Statystyczny',
+        sCategoryTextAndData_pl:           'Tekst i data'
     }, SSE.Views.FormulaDialog || {}));
 });

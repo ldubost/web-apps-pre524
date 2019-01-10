@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *    View
  *
  *    Created by Maxim Kadushkin on 27 February 2014
- *    Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *    Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -59,7 +59,7 @@ define([
         storeUsers: undefined,
         storeMessages: undefined,
 
-        tplUser: ['<li id="chat-user-<%= user.get("id") %>"<% if (!user.get("online")) { %> class="offline"<% } %>>',
+        tplUser: ['<li id="<%= user.get("iid") %>"<% if (!user.get("online")) { %> class="offline"<% } %>>',
                         '<div class="color" style="background-color: <%= user.get("color") %>;" >',
                             '<label class="name"><%= scope.getUserName(user.get("username")) %></label>',
                         '</div>',
@@ -67,7 +67,7 @@ define([
 
         templateUserList: _.template('<ul>' +
                         '<% _.each(users, function(item) { %>' +
-                            '<%= _.template(usertpl, {user: item, scope: scope}) %>' +
+                            '<%= _.template(usertpl)({user: item, scope: scope}) %>' +
                         '<% }); %>' +
                     '</ul>'),
 
@@ -82,7 +82,7 @@ define([
 
         templateMsgList: _.template('<ul>' +
                         '<% _.each(messages, function(item) { %>' +
-                            '<%= _.template(msgtpl, {msg: item, scope: scope}) %>' +
+                            '<%= _.template(msgtpl)({msg: item, scope: scope}) %>' +
                         '<% }); %>' +
                     '</ul>'),
 
@@ -162,14 +162,14 @@ define([
 
         _onAddUser: function(m, c, opts) {
             if (this.panelUsers) {
-                this.panelUsers.find('ul').append(_.template(this.tplUser, {user: m, scope: this}));
+                this.panelUsers.find('ul').append(_.template(this.tplUser)({user: m, scope: this}));
                 this.panelUsers.scroller.update({minScrollbarLength  : 25, alwaysVisibleY: true});
             }
         },
 
         _onUsersChanged: function(m) {
             if (m.changed.online != undefined && this.panelUsers) {
-                this.panelUsers.find('#chat-user-'+ m.get('id'))[m.changed.online?'removeClass':'addClass']('offline');
+                this.panelUsers.find('#' + m.get('iid'))[m.changed.online?'removeClass':'addClass']('offline');
                 this.panelUsers.scroller.update({minScrollbarLength  : 25, alwaysVisibleY: true});
             }
         },
@@ -186,7 +186,7 @@ define([
                 var content = this.panelMessages.find('ul');
                 if (content && content.length) {
                     this._prepareMessage(m);
-                    content.append(_.template(this.tplMsg, {msg: m, scope: this}));
+                    content.append(_.template(this.tplMsg)({msg: m, scope: this}));
 
                     // scroll to end
 

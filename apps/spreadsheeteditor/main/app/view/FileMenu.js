@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -210,8 +210,8 @@ define([
             this.items[10][(!this.mode.isOffline && this.document&&this.document.info&&(this.document.info.sharingSettings&&this.document.info.sharingSettings.length>0 ||
                                                                                        this.mode.sharingSettingsUrl&&this.mode.sharingSettingsUrl.length))?'show':'hide']();
 
-            this.items[11][this.mode.isEdit?'show':'hide']();
-            this.items[11].$el.find('+.devider')[this.mode.isEdit?'show':'hide']();
+            this.items[11][(this.mode.isEdit || this.mode.canComments)?'show':'hide']();
+            this.items[11].$el.find('+.devider')[(this.mode.isEdit || this.mode.canComments)?'show':'hide']();
 
             this.mode.canBack ? this.$el.find('#fm-btn-back').show().prev().show() :
                                     this.$el.find('#fm-btn-back').hide().prev().hide();

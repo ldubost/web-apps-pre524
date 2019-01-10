@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  ComboBoxFonts.js
  *
  *  Created by Alexander Yuzhin on 2/11/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -87,6 +87,7 @@ define([
                 Common.UI.ComboBox.prototype.initialize.call(this, _.extend(options, {
                     displayField: 'name',
                     scroller: {
+                        wheelSpeed: 20,
                         alwaysVisibleY: true,
                         onChange: this.updateVisibleFontsTiles.bind(this)
                     }
@@ -353,7 +354,7 @@ define([
                     '<li id="<%= item.id %>">',
                         '<a class="font-item" tabindex="-1" type="menuitem" style="vertical-align:middle; margin: 0 0 0 -10px; height:<%=scope.getListItemHeight()%>px;"/>',
                     '</li>'
-                ].join(''), {
+                ].join(''))({
                     item: item.attributes,
                     scope: this
                 }));
@@ -382,12 +383,11 @@ define([
                     }
                     $(this.el).find('ul').scrollTop(0);
                     this.trigger('show:after', this, e);
+                    this.flushVisibleFontsTiles();
+                    this.updateVisibleFontsTiles(null, 0);
                 } else {
                     Common.UI.ComboBox.prototype.onAfterShowMenu.apply(this, arguments);
                 }
-
-                this.flushVisibleFontsTiles();
-                this.updateVisibleFontsTiles(null, 0);
             },
 
             onAfterHideMenu: function(e) {
@@ -398,6 +398,8 @@ define([
             },
 
             addItemToRecent: function(record) {
+                if (this.recent<1) return;
+
                 if (record.get('type') != FONT_TYPE_RECENT &&
                     !this.store.findWhere({name: record.get('name'),type:FONT_TYPE_RECENT})) {
                     var fonts = this.store.where({type:FONT_TYPE_RECENT});

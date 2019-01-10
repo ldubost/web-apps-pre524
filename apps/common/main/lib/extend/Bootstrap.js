@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  Bootstrap.js
  *
  *  Created by Alexander Yuzhin on 5/27/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -81,8 +81,8 @@ function patchDropDownKeyDown(e) {
     if (!isActive || (isActive && e.keyCode == 27)) {
         if (e.which == 27) {
             $items = $('[role=menu] li.dropdown-submenu.over:visible', $parent);
-            if ($items.size()) {
-                $items.eq($items.size()-1).removeClass('over');
+            if ($items.length) {
+                $items.eq($items.length-1).removeClass('over');
                 return false;
             } else if ($parent.hasClass('dropdown-submenu') && $parent.hasClass('over')) {
                 $parent.removeClass('over');
@@ -110,6 +110,7 @@ function patchDropDownKeyDown(e) {
              _.delay(function() {
                  var mnu = $('> [role=menu]', li),
                     $subitems = mnu.find('> li:not(.divider):not(.disabled):visible > a'),
+                    $dataviews = mnu.find('> li:not(.divider):not(.disabled):visible .dataview'),
                     focusIdx = 0;
                  if (mnu.find('> .menu-scroll').length>0) {
                     var offset = mnu.scrollTop();
@@ -119,7 +120,7 @@ function patchDropDownKeyDown(e) {
                         }
                     }
                 }
-                if ($subitems.length>0)
+                if ($subitems.length>0 && $dataviews.length<1)
                     $subitems.eq(focusIdx).focus();
             }, 250);
         }
@@ -190,6 +191,10 @@ function clearMenus(isFromInputControl) {
     $('.dropdown-toggle').each(function (e) {
         var $parent = ($(this)).parent();
         if (!$parent.hasClass('open')) return;
+        if ($parent.attr('data-value') == 'prevent-canvas-click') {
+            $parent.attr('data-value','');
+            return;
+        }
         $parent.trigger(e = $.Event('hide.bs.dropdown'));
         if (e.isDefaultPrevented()) return;
         $parent.removeClass('open').trigger('hidden.bs.dropdown', isFromInputControl);

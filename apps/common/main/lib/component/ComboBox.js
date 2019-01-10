@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  ComboBox.js
  *
  *  Created by Alexander Yuzhin on 1/22/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -188,6 +188,11 @@ define([
                             title       : me.options.hint,
                             placement   : me.options.hintAnchor||'cursor'
                         });
+
+                        var modalParents = el.closest('.asc-window');
+                        if (modalParents.length > 0) {
+                            el.data('bs.tooltip').tip().css('z-index', parseInt(modalParents.css('z-index')) + 10);
+                        }
                     }
 
                     el.on('show.bs.dropdown',             _.bind(me.onBeforeShowMenu, me));
@@ -227,6 +232,7 @@ define([
                         minScrollbarLength: 40,
                         scrollYMarginOffset: 30,
                         includePadding: true,
+                        wheelSpeed: 10,
                         alwaysVisibleY: this.scrollAlwaysVisible
                     }, this.options.scroller));
                 }
@@ -251,6 +257,7 @@ define([
                         minScrollbarLength: 40,
                         scrollYMarginOffset: 30,
                         includePadding: true,
+                        wheelSpeed: 10,
                         alwaysVisibleY: this.scrollAlwaysVisible
                     }, this.options.scroller));
                 }
@@ -547,7 +554,7 @@ define([
                         '<% _.each(items, function(item) { %>',
                            '<li id="<%= item.id %>" data-value="<%= item.value %>"><a tabindex="-1" type="menuitem"><%= scope.getDisplayValue(item) %></a></li>',
                         '<% }); %>'
-                    ].join(''), {
+                    ].join(''))({
                         items: this.store.toJSON(),
                         scope: this
                     }));
@@ -562,6 +569,7 @@ define([
                     minScrollbarLength : 40,
                     scrollYMarginOffset: 30,
                     includePadding     : true,
+                    wheelSpeed: 10,
                     alwaysVisibleY: this.scrollAlwaysVisible
                 }, this.options.scroller));
             }

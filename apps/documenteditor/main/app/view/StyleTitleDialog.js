@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -70,7 +70,7 @@ define([
                     '</div>'
                 ].join('');
 
-                this.options.tpl = _.template(this.template, this.options);
+                this.options.tpl = _.template(this.template)(this.options);
 
                 Common.UI.Window.prototype.initialize.call(this, this.options);
             },
@@ -107,10 +107,11 @@ define([
                 menuStyle   : 'width: 100%; max-height: 290px;',
                 editable    : false,
                 cls         : 'input-group-nr',
-                data        : this.options.formats
+                data        : this.options.formats,
+                disabled    : (this.options.formats.length==0)
             });
-
-            this.cmbNextStyle.setValue(this.options.formats[0].value);
+            if (this.options.formats.length>0)
+                this.cmbNextStyle.setValue(this.options.formats[0].value);
         },
 
         show: function() {
@@ -129,7 +130,7 @@ define([
 
         getNextStyle: function () {
             var me = this;
-            return me.cmbNextStyle.getValue();
+            return (me.options.formats.length>0) ? me.cmbNextStyle.getValue() : null;
         },
 
         onBtnClick: function(event) {

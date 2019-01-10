@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  TableOptionsDialog.js
  *
  *  Created by Alexander Yuzhin on 4/9/14
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -72,8 +72,9 @@ define([
                 '</div>'
             ].join('');
 
-            this.options.tpl = _.template(this.template, this.options);
+            this.options.tpl = _.template(this.template)(this.options);
             this.checkRangeType = Asc.c_oAscSelectionDialogType.FormatTable;
+            this.selectionType = Asc.c_oAscSelectionType.RangeCells;
 
             Common.UI.Window.prototype.initialize.call(this, this.options);
         },
@@ -129,6 +130,8 @@ define([
                 }
                 if (settings.title)
                     me.setTitle(settings.title);
+                if (settings.selectionType)
+                    me.selectionType = settings.selectionType;
 
                 me.api.asc_unregisterCallback('asc_onSelectionRangeChanged', _.bind(me.onApiRangeChanged, me));
                 me.api.asc_registerCallback('asc_onSelectionRangeChanged', _.bind(me.onApiRangeChanged, me));
@@ -145,15 +148,16 @@ define([
             if (this.checkRangeType == Asc.c_oAscSelectionDialogType.FormatTable) {
                 var options = this.api.asc_getAddFormatTableOptions(this.inputRange.getValue());
                 options.asc_setIsTitle(this.cbTitle.checked);
-                return options;
+                return { selectionType: this.selectionType,  range: options};
             } else
-                return this.inputRange.getValue();
+                return { selectionType: this.selectionType,  range: this.inputRange.getValue()};
         },
 
         onApiRangeChanged: function(info) {
-            this.inputRange.setValue(info);
+            this.inputRange.setValue(info.asc_getName());
             if (this.inputRange.cmpEl.hasClass('error'))
                 this.inputRange.cmpEl.removeClass('error');
+            this.selectionType = info.asc_getType();
         },
 
         isRangeValid: function() {

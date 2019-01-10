@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  Document Editor
  *
  *  Created by Alexander Yuzhin on 10/7/16
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -74,7 +74,8 @@ define([
                 { caption: 'ROC 16K',               subtitle: Common.Utils.String.format('19,68{0} x 27,3{0}', txtCm),   value: [196.8, 273] },
                 { caption: 'Envelope Choukei 3',    subtitle: Common.Utils.String.format('11,99{0} x 23,49{0}', txtCm),  value: [119.9, 234.9] },
                 { caption: 'Super B/A3',            subtitle: Common.Utils.String.format('33,02{0} x 48,25{0}', txtCm),  value: [330.2, 482.5] }
-            ];
+            ],
+            _licInfo;
 
         return {
             models: [],
@@ -113,6 +114,8 @@ define([
 
             setMode: function (mode) {
                 this.getView('Settings').setMode(mode);
+                if (mode.canBranding)
+                    _licInfo = mode.customization;
             },
 
             initEvents: function () {
@@ -185,12 +188,13 @@ define([
                     me.initPageInfo();
                 } else if ('#settings-about-view' == pageId) {
                     // About
+                    me.setLicInfo(_licInfo);
                 } else {
                     $('#settings-readermode input:checkbox').attr('checked', Common.SharedSettings.get('readerMode'));
                     $('#settings-search').single('click',                       _.bind(me.onSearch, me));
                     $('#settings-readermode input:checkbox').single('change',   _.bind(me.onReaderMode, me));
-                    $('#settings-edit-document').single('click',                _.bind(me.onEditDocumet, me));
                     $('#settings-help').single('click',                         _.bind(me.onShowHelp, me));
+                    $('#settings-download').single('click',                     _.bind(me.onDownloadOrigin, me));
                 }
             },
 
@@ -223,11 +227,44 @@ define([
                 }
             },
 
-            // Handlers
+            setLicInfo: function(data){
+                if (data && typeof data == 'object' && typeof(data.customer)=='object') {
+                    $('.page[data-page=settings-about-view] .logo').hide();
+                    $('#settings-about-tel').parent().hide();
+                    $('#settings-about-licensor').show();
 
-            onEditDocumet: function() {
-                Common.Gateway.requestEditRights();
+                    var customer = data.customer,
+                        value = customer.name;
+                    value && value.length ?
+                        $('#settings-about-name').text(value) :
+                        $('#settings-about-name').hide();
+
+                    value = customer.address;
+                    value && value.length ?
+                        $('#settings-about-address').text(value) :
+                        $('#settings-about-address').parent().hide();
+
+                    (value = customer.mail) && value.length ?
+                        $('#settings-about-email').attr('href', "mailto:"+value).text(value) :
+                        $('#settings-about-email').parent().hide();
+
+                    if ((value = customer.www) && value.length) {
+                        var http = !/^https?:\/{2}/i.test(value) ? "http:\/\/" : '';
+                        $('#settings-about-url').attr('href', http+value).text(value);
+                    } else
+                        $('#settings-about-url').hide();
+
+                    if ((value = customer.info) && value.length) {
+                        $('#settings-about-info').show().text(value);
+                    }
+
+                    if ( (value = customer.logo) && value.length ) {
+                        $('#settings-about-logo').show().html('<img src="'+value+'" style="max-width:216px; max-height: 35px;" />');
+                    }
+                }
             },
+
+            // Handlers
 
             onSearch: function (e) {
                 var toolbarView = DE.getController('Toolbar').getView('Toolbar');
@@ -283,6 +320,15 @@ define([
 
                     me.hideModal();
                 }
+            },
+
+            onDownloadOrigin: function(e) {
+                var me = this;
+
+                _.defer(function () {
+                    me.api.asc_DownloadOrigin();
+                });
+                me.hideModal();
             },
 
             onFormatChange: function (e) {

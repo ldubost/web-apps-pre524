@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -34,7 +34,7 @@
  *  StatusBar View
  *
  *  Created by Maxim Kadushkin on 27 March 2014
- *  Copyright (c) 2014 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -60,7 +60,7 @@ define([
 
             storeUsers: undefined,
 
-            tplUser: ['<li id="status-chat-user-<%= user.get("id") %>" class="<% if (!user.get("online")) { %> offline <% } if (user.get("view")) {%> viewmode <% } %>">',
+            tplUser: ['<li id="<%= user.get("iid") %>" class="<% if (!user.get("online")) { %> offline <% } if (user.get("view")) {%> viewmode <% } %>">',
                 '<div class="color" style="background-color: <%= user.get("color") %>;" >',
                     '<label class="name"><%= scope.getUserName(user.get("username")) %></label>',
                 '</div>',
@@ -68,7 +68,7 @@ define([
 
             templateUserList: _.template('<ul>' +
                 '<% _.each(users, function(item) { %>' +
-                    '<%= _.template(usertpl, {user: item, scope: scope}) %>' +
+                    '<%= _.template(usertpl)({user: item, scope: scope}) %>' +
                 '<% }); %>' +
             '</ul>'),
 
@@ -489,14 +489,14 @@ define([
 
             _onAddUser: function(m, c, opts) {
                 if (this.panelUsersList) {
-                    this.panelUsersList.find('ul').append(_.template(this.tplUser, {user: m, scope: this}));
+                    this.panelUsersList.find('ul').append(_.template(this.tplUser)({user: m, scope: this}));
                     this.panelUsersList.scroller.update({minScrollbarLength  : 40, alwaysVisibleY: true});
                 }
             },
 
             _onUsersChanged: function(m) {
                 if (m.changed.online != undefined && this.panelUsersList) {
-                    this.panelUsersList.find('#status-chat-user-'+ m.get('id'))[m.changed.online?'removeClass':'addClass']('offline');
+                    this.panelUsersList.find('#'+ m.get('iid'))[m.changed.online?'removeClass':'addClass']('offline');
                     this.panelUsersList.scroller.update({minScrollbarLength  : 40, alwaysVisibleY: true});
                 }
             },
@@ -706,7 +706,7 @@ define([
                     label: this.labelSheetName,
                     btns: {ok: this.okButtonText, cancel: this.cancelButtonText}
                 });
-                this.options.tpl = _.template(this.template, this.options);
+                this.options.tpl = _.template(this.template)(this.options);
 
                 Common.UI.Window.prototype.initialize.call(this, this.options);
             },
@@ -823,7 +823,7 @@ define([
                     label: options.ismove ? this.textMoveBefore : this.textCopyBefore,
                     btns: {ok: this.okButtonText, cancel: this.cancelButtonText}
                 });
-                this.options.tpl = _.template(this.template, this.options);
+                this.options.tpl = _.template(this.template)(this.options);
 
                 Common.UI.Window.prototype.initialize.call(this, this.options);
             },

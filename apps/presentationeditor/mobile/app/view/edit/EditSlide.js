@@ -1,6 +1,6 @@
 /*
  *
- * (c) Copyright Ascensio System Limited 2010-2017
+ * (c) Copyright Ascensio System Limited 2010-2018
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,7 +36,7 @@
  *  Presentation Editor
  *
  *  Created by Julia Radzhabova on 12/07/16
- *  Copyright (c) 2016 Ascensio System SIA. All rights reserved.
+ *  Copyright (c) 2018 Ascensio System SIA. All rights reserved.
  *
  */
 
@@ -235,7 +235,7 @@ define([
                         '<% }); %>',
                         '</ul>',
                         '<% }); %>'
-                    ].join(''), {
+                    ].join(''))({
                         layouts: layouts
                     });
 
@@ -268,7 +268,7 @@ define([
                             '<% }); %>',
                             '</div>',
                         '<% }); %>'
-                    ].join(''), {
+                    ].join(''))({
                         themes: themes
                     });
 
@@ -291,7 +291,7 @@ define([
                             '</label>',
                         '</li>',
                         '<% }); %>'
-                    ].join(''), {
+                    ].join(''))({
                         android : Common.SharedSettings.get('android'),
                         types: _arrCurrentEffectTypes
                     });
